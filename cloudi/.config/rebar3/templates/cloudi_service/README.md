@@ -3,7 +3,7 @@ cloudi_service
 
 * Install
 
-Copy all template files to `${HOME}/.config/rebar3/templates.
+Copy all template files to `${HOME}/.config/rebar3/templates`.
 
 Check if `cloudi_service` is available:
 
@@ -43,11 +43,9 @@ $ rebar3 new cloudi_service myservice 2.0.4
 ===> Writing ./priv/cloudi/myservice_test.sh
 ```
 
-a. Inspect generated files.
+Move (!!overwrite!!) `myservice.erl` to `src` folder.
 
-b. **Move (!!overwrite!!) `myservice.erl` to `src` folder.**
-
-c. Compile your project.
+Compile the project.
 
 ```bash
 $ rebar3 compile
