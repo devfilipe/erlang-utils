@@ -40,6 +40,7 @@ RUN apt-get update --allow-releaseinfo-change && DEBIAN_FRONTEND=noninteractive 
     tree \
     gosu \
     python3-pip \
+    python3-venv \
     libxml2-utils \
     zsh
 
