@@ -22,6 +22,7 @@ For development, you may want to set extras:
     docker build -f Dockerfile.build.cloudi -t cloudi_erlang .
     # docker create --rm -i \
     docker run -d -it \
+                --hostname cloudi-erlang \
                 --privileged \
                 --env LOGNAME="${USER}" \
                 --env USER="${USER}" \
@@ -43,6 +44,8 @@ For development, you may want to set extras:
     # docker start cloudi_erlang
     docker exec -it cloudi_erlang bash
 
+To run CloudI from source, use `Dockerfile.build.cloudi-git`.
+
 The CloudI dashboard is then accessible at
 [http://localhost:6464/cloudi/](http://localhost:6464/cloudi/).
 
@@ -54,7 +57,7 @@ remember to detach with a CTRL+P,CRTL+Q key sequence:
 
     docker container attach cloudi_erlang
 
-Alternativelly, you can connect from a remote node:
+Alternativelly, you can connect from a remote node.
 
     erl -sname n1 -setcookie cloudi
 
@@ -70,7 +73,33 @@ Alternativelly, you can connect from a remote node:
 
 Or:
 
-    erl -sname n1 -remsh 'cloudi@<HOSTNAME>'
+    erl -sname n1 -setcookie cloudi -remsh 'cloudi@<HOSTNAME>'
+
+## Connect Observer (host) to CloudI (local container)
+
+Assuming the container port mapping:
+
+```
+  -p 6464:6464 \  # cloudi web
+  #-p 3470:3469 \ # epmd
+  -p :4374-4474 \ # inets
+```
+
+Add to `/etc/hosts` (host):
+
+```
+<CONTAINER IP>  <CONTAINER HOSTNAME>
+172.17.0.2    cloudi-erlang
+```
+
+Run `observer` from host Erlang installation:
+
+```
+erl -sname obs -setcookie cloudi -run observer
+```
+
+Go to Nodes -> Connect node: `cloudi@cloudi-erlang`.
+
 
 ## Connect to simulator network
 

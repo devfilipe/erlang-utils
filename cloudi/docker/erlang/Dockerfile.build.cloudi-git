@@ -1,0 +1,84 @@
+FROM erlang:latest
+
+# Set the release version of CloudI
+ARG CLOUDI_VERSION
+ENV CLOUDI_VERSION ${CLOUDI_VERSION:-2.0.4}
+
+# Set the release SHA256 checksum of CloudI
+ARG CLOUDI_SHA256
+ENV CLOUDI_SHA256 ${CLOUDI_SHA256:-836497e3a5e0b9869e60ae8841a1e62d4866e813a19968d8b4b7d592c8f5e551}
+
+RUN apt-get update --allow-releaseinfo-change && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    build-essential \
+    autoconf \
+    libtool \
+    libncurses5-dev \
+    openssl \
+    libssl-dev \
+    fop \
+    curl \
+    git \
+    g++ \
+    default-jdk \
+    nodejs \
+    perl \
+    php \
+    python3 \
+    python3-dev \
+    ruby \
+    libboost-system-dev \
+    libboost-thread-dev \
+    libboost-dev \
+    libgmp3-dev \
+    libssl-dev \
+    vim \
+    tmux \
+    wget \
+    net-tools \
+    openssh-server \
+    sudo \
+    tree \
+    gosu \
+    python3-pip \
+    python3-venv \
+    libxml2-utils \
+    zsh
+
+# Install oh-my-bash
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
+
+# Build and Install CloudI
+# (vm.args uses "+B i" so the Erlang VM will ignore CTRL+C)
+RUN git clone https://github.com/CloudI/CloudI.git \
+    && cd /CloudI \
+    && git checkout develop \
+    && cd "src" \
+    && ./autogen.sh \
+    && ./configure \
+    && make \
+    && make install \
+    && cd .. \
+    && echo "+B i" >> /usr/local/etc/cloudi/vm.args
+
+# Use a modified CloudI configuration file based on cloudi_minimal.conf
+COPY conf/cloudi.conf /usr/local/etc/cloudi/cloudi.conf
+
+# Add the entrypoint script
+COPY scripts/entrypoint.sh /entrypoint.sh
+
+# Allow the SSH Server port
+EXPOSE 22
+
+# Allow the HTTP Server port for CloudI
+EXPOSE 6464
+
+# Allow the Erlang Port Mapper Daemon port
+EXPOSE 4369
+
+# Allow the distributed Erlang ports (inet_dist_listen)
+EXPOSE 4374-4474
+
+RUN PATH="$PATH:/usr/bin/zsh"
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/usr/sbin/sshd", "-D"]
