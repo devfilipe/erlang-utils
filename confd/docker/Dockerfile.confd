@@ -1,0 +1,68 @@
+FROM ubuntu:20.04
+
+SHELL ["/bin/bash", "-c"]
+
+# The environment needed by ConfD
+ARG CONFD_VERSION=7.7.2
+ARG CONFD_ARCH=x86_64
+ENV CONFD_DIR=/confd LD_LIBRARY_PATH=/confd/lib PATH=/confd-${CONFD_VERSION}/bin:$PATH
+
+# Set timezone.
+ENV TZ=America/Sao_Paulo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+ARG USER
+
+# Install extra packages needed to run ConfD.
+RUN apt-get update && apt-get install -y \
+        gosu \
+        tzdata \
+        libssl-dev \
+        openssh-server \
+        python-is-python3 \
+        python3-dev \
+        python3-pip \
+        vim \
+        openssh-client && mkdir -p ${CONFD_DIR}
+RUN ln -sv /usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.2 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0
+
+RUN pip3 install pyang
+RUN pip3 install netconf-console2
+
+# Set useful alias.
+RUN echo 'alias python=python3' >> /root/.bashrc
+RUN echo 'alias confd="/confd-${CONFD_VERSION}/bin/confd"' >> /root/.bashrc
+RUN source /root/.bashrc
+
+# Cleanup the image.
+# RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# We will run ConfD as a non-root user.
+# RUN addgroup confd
+# RUN useradd confd -g confd
+
+# Install ConfD in the container.
+COPY resources/confd-$CONFD_VERSION /tmp/confd-$CONFD_VERSION
+
+WORKDIR /tmp/confd-${CONFD_VERSION}
+RUN chmod +x confd-${CONFD_VERSION}.linux.${CONFD_ARCH}.signed.bin \
+        && sh confd-${CONFD_VERSION}.linux.${CONFD_ARCH}.signed.bin \
+        && sh confd-${CONFD_VERSION}.linux.${CONFD_ARCH}.installer.bin /confd-${CONFD_VERSION}
+RUN yes | ssh-keygen -f /confd-${CONFD_VERSION}/etc/confd/ssh/ssh_host_rsa_key -N "" -t rsa -m pem
+
+#RUN chown -vR confd:confd /confd-${CONFD_VERSION}
+
+# Add the entrypoint script
+COPY scripts/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Add volumes and the working directory.
+WORKDIR /confd-${CONFD_VERSION}
+
+# Expose ports for required northbound protocols as necessary.
+EXPOSE 2022 2024 4565
+# NETCONF over TCP, HA replication and HTTP(S) are not used in this example.
+#EXPOSE 2023 4569 8008 8088
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/usr/sbin/sshd", "-D"]
