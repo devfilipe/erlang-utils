@@ -59,6 +59,7 @@ For development, you may want to set extras:
 4. Access the container and run confd
 
 ```bash
+docker exec -it confd_7.7.2 bash
 #confd --foreground [--verbose]
 
 confd -c ${CONFD_CONF_FILE} --addloadpath ${CONFD_DIR}/etc/confd --addloadpath ${FXS_DIR} --verbose
