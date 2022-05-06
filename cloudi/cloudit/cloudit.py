@@ -50,7 +50,7 @@ def compile_all():
     print(f'{m}:{ret}')
 
 def rebar3(app:str):
-  command = 'rm _build/ -rf; rebar3 compile'
+  command = 'rm _build/ -rf; rm rebar.lock; rebar3 compile'
   c = os.path.expanduser(get_cwd()+"/"+app)
   ret = subprocess.run(command, capture_output=True, shell=True, cwd=c)
   return ret.returncode
@@ -76,14 +76,21 @@ def code_path_remove_all():
   return STATUS_OK
 
 def code_path_add(module:str):
-  bin_path = f'_build/default/lib/{module}/ebin'
-  service_path = f"\'{get_cwd()}/{module}/{bin_path}\'"
+  if "/" not in module:
+    bin_path = f'_build/default/lib/{module}/ebin'
+    service_path = f"\'{get_cwd()}/{module}/{bin_path}\'"
+  else:
+    service_path = f"\'{module}\'"
+  print(service_path)
   r = requests.post(CODE_PATH_ADD_URL, data=service_path)
   return r.text
 
 def code_path_remove(module:str):
-  bin_path = f'_build/default/lib/{module}/ebin'
-  service_path = f"\'{get_cwd()}/{module}/{bin_path}\'"
+  if "/" not in module:
+    bin_path = f'_build/default/lib/{module}/ebin'
+    service_path = f"\'{get_cwd()}/{module}/{bin_path}\'"
+  else:
+    service_path = f"\'{module}\'"
   r = requests.post(CODE_PATH_REMOVE_URL, data=service_path)
   return r.text
 
@@ -180,4 +187,16 @@ def service_subscriptions(service:str):
     id = service
   data = f'"{id}"'
   r = requests.post(SERVICE_SUBSCRIPTIONS_URL, data=data)
+  return r.text
+
+def post(path:str, data:str = "{}"):
+  Url = f'http://{CLOUDI_IP}:{CLOUDI_PORT}/{path}'
+  r = requests.post(Url, data)
+  print(r)
+  return r.text
+
+def get(path:str):
+  Url = f'http://{CLOUDI_IP}:{CLOUDI_PORT}/{path}'
+  r = requests.get(Url)
+  print(r)
   return r.text
