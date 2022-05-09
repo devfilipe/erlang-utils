@@ -157,6 +157,8 @@ def service_id(service:str):
   for s in r.json().get('services'):
     if s['module'] == service:
       return s['id']
+    if s['file_path'] == service:
+      return s['id']
   return []
 
 def service_list():
@@ -164,7 +166,10 @@ def service_list():
   list = []
   r = requests.get(SERVICES_JSON_URL)
   for s in r.json().get('services'):
-    dict[s['id']] = s['module']
+    if 'module' in s:
+      dict[s['id']] = s['module']
+    else:
+      dict[s['id']] = s['file_path']
   list.append(dict.copy())
   output = json.JSONEncoder().encode({"services": list})
   print(json.dumps(json.loads(output), indent=2, sort_keys=True))
