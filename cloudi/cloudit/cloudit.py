@@ -155,11 +155,25 @@ def service_update(service:str):
 def service_id(service:str):
   r = requests.get(SERVICES_JSON_URL)
   for s in r.json().get('services'):
-    if s['module'] == service:
-      return s['id']
-    if s['file_path'] == service:
-      return s['id']
+    if s['type'] == 'internal':
+      if s['module'] == service:
+        return s['id']
+    else:
+      if s['file_path'] == service:
+        return s['id']
   return []
+
+def service_ids(service:str):
+  list = []
+  r = requests.get(SERVICES_JSON_URL)
+  for s in r.json().get('services'):
+    if s['type'] == 'internal':
+      if s['module'] == service:
+        list.append(s['id'])
+    else:
+      if s['file_path'] == service:
+        list.append(s['id'])
+  return list
 
 def service_list():
   dict = {}
@@ -187,12 +201,24 @@ def service_subscriptions(service:str):
     id = service_id(service)
     if id == []:
       return STATUS_NOT_FOUND
-    data = f'"{id}"'
   else:
     id = service
   data = f'"{id}"'
   r = requests.post(SERVICE_SUBSCRIPTIONS_URL, data=data)
   return r.text
+
+def service_subscriptions2(service:str):
+  list = []
+  dict = {}
+  ids = service_ids(service)
+  if ids == []:
+    return STATUS_NOT_FOUND
+  for id in ids:
+    data = f'"{id}"'
+    r = requests.post(SERVICE_SUBSCRIPTIONS_URL, data=data)
+    dict[id] = r.text
+  list.append(dict.copy())
+  return list
 
 def post(path:str, data:str = "{}"):
   Url = f'http://{CLOUDI_IP}:{CLOUDI_PORT}/{path}'
